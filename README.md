@@ -36,18 +36,18 @@ notation followed by using bit packing to combine each individual byte.
 
 The standard FEN notation for the starting position takes up 56 bytes and is encoded as follows:
     ```
-    rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     ```
 
 It could immediately be compacted down to 46 bytes by removing delimiters:
     ```
-    rnbqkbnrpppppppp8888PPPPPPPPRNBQKBNRwKQkq-0 1
+rnbqkbnrpppppppp8888PPPPPPPPRNBQKBNRwKQkq-0 1
     ```
 
 You can then further compact it to 31 bytes by using a number to indicate repeated pieces and
 using a separate character to indicate empty squares, in this case `e`.
     ```
-    rnbqkbnr8p32e8PRNBQKBNRwKQkq-0 1
+rnbqkbnr8p32e8PRNBQKBNRwKQkq-0 1
     ```
 
 En passant is typically encoded using coordinate notation (ie `e4`), but if you instead use digits
@@ -104,42 +104,42 @@ K | 10110
 Using this methodology, we can then encode the starting position as follows:
 
 ```
-    r 01110 -- Black pieces
-    n 01100
-    b 01101
-    q 01111
-    k 10000
-    b 01101
-    n 01100
-    r 01110
-    8 01000 -- Black pawns
-    p 01011
+r 01110 -- Black pieces
+n 01100
+b 01101
+q 01111
+k 10000
+b 01101
+n 01100
+r 01110
+8 01000 -- Black pawns
+p 01011
 
-    3 00011
-    2 00010
-    e 01010
+3 00011
+2 00010
+e 01010
 
-    8 01000 -- White pawns
-    P 10001
-    R 10100 -- White pieces
-    N 10010
-    B 10011
-    R 10100
-    Q 10101
-    K 10110
-    B 10011
-    N 10010
-    R 10100
-    0       -- Active color
-    1111    -- Castling availability
-    00000    -- En Passant target squares
-    000000  -- Half moves
-    1       -- Move number
+8 01000 -- White pawns
+P 10001
+R 10100 -- White pieces
+N 10010
+B 10011
+R 10100
+Q 10101
+K 10110
+B 10011
+N 10010
+R 10100
+0       -- Active color
+1111    -- Castling availability
+00000    -- En Passant target squares
+000000  -- Half moves
+1       -- Move number
 ```
 
 Next, the fields are combined via bit packing and encoded as the following base 10 values:
 ```
-    115,  26, 248,  53, 142,  66, 198,  37, 34,  52, 148, 235, 105, 202, 143, 128, 16
+115,  26, 248,  53, 142,  66, 198,  37, 34,  52, 148, 235, 105, 202, 143, 128, 16
 ```
 
 This reduces the total number of bytes down to 17, or a decrease in size of 69.64%.
@@ -148,19 +148,19 @@ This reduces the total number of bytes down to 17, or a decrease in size of 69.6
 Consider a board of alternating empty squares and queens, with each side having one king.
 In normal FEN notation the board position would look like this:
    ```
-   q1qkq1q1/1q1q1q1q/q1q1q1q1/1q1q1q1q/Q1Q1Q1Q1/1Q1Q1Q1Q/Q1Q1Q1Q1/1Q1QKQ1Q
+q1qkq1q1/1q1q1q1q/q1q1q1q1/1q1q1q1q/Q1Q1Q1Q1/1Q1Q1Q1Q/Q1Q1Q1Q1/1Q1QKQ1Q
    ```
 
 This takes 71 bytes, or 64 without the row delimiters.
 This can be reduced down to 40 bytes by using bit packing.
 
 ```
-    01111010 10011111 00000111 10101001 11101010
-    01010011 11010100 11110101 00111101 01001111
-    01111010 10011110 10100111 10101001 11101010
-    01010011 11010100 11110101 00111101 01001111
-    10101010 10101010 10101010 10101010 10101010
-    01010101 01010101 01010101 01010101 01010101
-    10101010 10101010 10101010 10101010 10101010
-    01010101 01101101 01010101 01010101 01010101
+01111010 10011111 00000111 10101001 11101010
+01010011 11010100 11110101 00111101 01001111
+01111010 10011110 10100111 10101001 11101010
+01010011 11010100 11110101 00111101 01001111
+10101010 10101010 10101010 10101010 10101010
+01010101 01010101 01010101 01010101 01010101
+10101010 10101010 10101010 10101010 10101010
+01010101 01101101 01010101 01010101 01010101
 ```
