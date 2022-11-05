@@ -16,7 +16,8 @@ where castling and en passant is obviously not possible.
 For further details about FEN notation check out the wikipedia article
 [here.](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
 
-The bit packing tools were partially sourced from Low Byte Productions at https://www.youtube.com/watch?v=132wDVovzhw
+The bit packing tools were partially sourced from Low Byte Productions:
+https://www.youtube.com/watch?v=132wDVovzhw
 
 ## Use cases
 The lichess.org puzzle database (found [here](https://database.lichess.org#puzzles))

@@ -1,8 +1,8 @@
 // bit-packing.ts
 
 /*
-The following is partially sourced from Low Byte Productions, formerly Low Level JavaScript,
-at https://www.youtube.com/watch?v=132wDVovzhw
+The following is partially sourced from Low Byte Productions:
+https://www.youtube.com/watch?v=132wDVovzhw
 */
 
 
