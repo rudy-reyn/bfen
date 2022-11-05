@@ -1,6 +1,10 @@
 // bit-packing.ts
 
-const binaryRegex = /^(0|1)+/;
+/*
+The following is partially sourced from Low Byte Productions, formerly Low Level JavaScript,
+at https://www.youtube.com/watch?v=132wDVovzhw
+*/
+
 
 export class BitDescriptor {
     value: number;
@@ -21,6 +25,7 @@ export class BitDescriptor {
     }
 
     static fromString(value: string) {
+        const binaryRegex = /^(0|1)+/;
         if (!(binaryRegex.test(value))) {
             throw new Error('Expected a binary string');
         }
