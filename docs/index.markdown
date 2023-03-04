@@ -28,7 +28,7 @@ For further details about FEN notation check out the wikipedia article
 [Source Repository](https://github.com/rudy-reyn/bfen)
 
 The bit packing tools were partially sourced from Low Byte Productions:
-https://www.youtube.com/watch?v=132wDVovzhw
+[https://www.youtube.com/watch?v=132wDVovzhw](https://www.youtube.com/watch?v=132wDVovzhw)
 
 ## Use cases
 The lichess.org puzzle database (found [here](https://database.lichess.org#puzzles))
