@@ -1,0 +1,15 @@
+title: safesync.io
+
+name: BFEN - Binary Forsyth–Edwards Notation
+description: Ultra compressed chess position encoding written in TypeScript
+url: "https://reyn.dev/bfen"
+baseurl: "bfen" # the subpath of your site, e.g. /blog
+email: rudy.reyn@gmail.com
+
+github_username:  rudy-reyn
+
+# Build settings
+theme: minima
+
+plugins:
+  - jekyll-feed

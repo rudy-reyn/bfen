@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Backend Application and API | safesync.io</title>
+<meta name="generator" content="Jekyll v4.3.2">
+<meta property="og:title" content="Backend Application and API">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="An end-to-end encrypted cloud file storage system.">
+<meta property="og:description" content="An end-to-end encrypted cloud file storage system.">
+<link rel="canonical" href="http://localhost:4000/backend">
+<meta property="og:url" content="http://localhost:4000/backend">
+<meta property="og:site_name" content="safesync.io">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Backend Application and API">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"An end-to-end encrypted cloud file storage system.","headline":"Backend Application and API","url":"http://localhost:4000/backend"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css">
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="safesync.io">
+</head>
+<body>
+<header class="site-header" role="banner">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">safesync.io</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/backend">Backend Application and API</a><a class="page-link" href="/client">Client Side Application</a>
+</div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Backend Application and API</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="" itemprop="datePublished">
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h1 id="backend-application">Backend Application</h1>
+
+<h2 id="synchronization-and-backend-storage">Synchronization and Backend Storage</h2>
+
+<p>The backend consists of a synchronization server, a metadata database for storing partition and file information, and an object store used for storing files.</p>
+
+<p><img class="mermaid" src="https://mermaid.ink/svg/eyJjb2RlIjoiZmxvd2NoYXJ0IExSXG5zeW5jKFN5bmNocm9uaXphdGlvbiBTZXJ2ZXIpXG5zZmpbKE1ldGFkYXRhIERhdGFiYXNlKV1cbnN5bmMgLS0-IHNmalxuc3luYyAtLT4gc3RvcmVbKE9iamVjdCBTdG9yZSldIiwibWVybWFpZCI6bnVsbH0"></p>
+
+<h2 id="object-storage">Object Storage</h2>
+
+<p>For file storage, I am going to use MinIO as an object store. An object store treats files as objects and stores them in bucket in a non-hierarchical manner. In our case, file partitions will only be created, overwritten, and deleted, rather than being modified in place.</p>
+
+<p>The object store is organized into two buckets with each bucket containing per-user subfolders.</p>
+
+<ul>
+  <li>A staging bucket used for storing partitions during the upload process. This is done to prevent corruption and partition mismatch in case of broken connections.</li>
+  <li>A partitions bucket used for fully synced partitions.</li>
+</ul>
+
+<h3 id="reasons-for-using-minio">Reasons for using MinIO</h3>
+
+<p>Object stores are commonly used in cloud storage because it allows for fast reads and writes, is more horizontally scalable, and makes maintaining consensus between distributed storage relatively easy. Object stores are typically paired with another database for storing metadata.</p>
+
+<p>Some of the most popular cloud based object storage options include Amazon S3, Google Cloud Storage, and Microsoft Azure Blob Storage. With Amazon <a href="https://www.srgresearch.com/articles/as-quarterly-cloud-spending-jumps-to-over-50b-microsoft-looms-larger-in-amazons-rear-mirror">being the leader in the cloud service industry</a>, an S3 compatible storage option is a good idea because it would allow for compatibility with a plethora of different libraries, frameworks, and other tools and would also making switching services down the road much easier, if necessary.</p>
+
+<p>Given that our goal is to maintain both privacy and security, I’ve decided to use the S3 compatible but self-hosted object store MinIO on my own private servers. This removes the reliance on third parties and is also more cost effective for small scale project. MinIO also has a relatively easy to use Haskell library making it a good choice for this project.</p>
+
+<h2 id="synchronization">Synchronization</h2>
+
+<p>The upload processes can be broken down into an initialization phase, a synchronization phase, and a confirmation phase.</p>
+
+<ol>
+  <li>
+<strong>Initialization:</strong> a POST request containing upload info is sent, with the number of partitions, last partition size, and expected partition ids.</li>
+  <li>
+<strong>Synchronization:</strong> each encrypted partition is uploaded with its own HTTPs POST request, containing the synchronization token. The partitions are stored in the staging bucket in the object store in a subfolder.</li>
+  <li>
+<strong>Confirmation:</strong> this includes validating the hashes of each partition, the size of the last partition, and the total number of partitions. After each partition is uploaded, the partitions are moved from the staging bucket to the storage bucket.</li>
+</ol>
+
+<p><img class="mermaid" src="https://mermaid.ink/svg/eyJjb2RlIjoiY2xhc3NEaWFncmFtXG4lJS1cbmNsYXNzIE9iamVjdEluZm8ge1xub2JqZWN0SWQgOjogSW50ZWdlclxub2JqZWN0TmFtZSA6OiBFbmNCYXNlNjRcbm9iamVjdFR5cGUgOjogT2JqVHlwZVxub2JqTW9kVGltZSA6OiBVVENUaW1lXG5vYmplY3RTYWx0IDo6IE1heWJlIEJhc2U2NFxub2JqZWN0S2V5ICA6OiBNYXliZSBFbmNCYXNlNjRcbnBhcnRpdGlvbklkcyA6OiBNYXliZSBbSW50ZWdlcl1cbn1cbiUlLVxuY2xhc3MgUGFydGl0aW9uSW5mbyB7XG5wYXJ0aXRpb25JZCAgIDo6IEludGVnZXJcbnBhcnRpdGlvblNhbHQgOjogQmFzZTY0XG5wYXJ0aXRpb25LZXkgIDo6IEVuY0Jhc2U2NFxubmV4dElkIDo6IE1heWJlIEludGVnZXJcbn1cbiUlLVxuY2xhc3MgUGFydGl0aW9uIHsgcGFydGl0aW9uRGF0YSA6OiBCeXRlU3RyaW5nIH0iLCJtZXJtYWlkIjpudWxsfQ"></p>
+
+<h2 id="database">Database</h2>
+
+<p>The metadata database is PostgreSQL used for storing partition info, symmetric keys, metadata, and access information. This is done using three tables, an access list table, an objects table, and a partitions table.</p>
+
+<p>The <strong>partitions table</strong> is used to store partition encryption information, partition order information, and a pointer to its location on the file object store.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>partitionId</td>
+      <td>int</td>
+      <td>Primary Key</td>
+    </tr>
+    <tr>
+      <td>objectStoreId</td>
+      <td>string</td>
+      <td>Points to its object store location</td>
+    </tr>
+    <tr>
+      <td>salt</td>
+      <td>bytes</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>*key</td>
+      <td>bytes</td>
+      <td>128 bit AES-GCM symmetric key</td>
+    </tr>
+    <tr>
+      <td>next</td>
+      <td>bytes?</td>
+      <td>Recursive foreign Key</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Fields marked with an asterisk are encrypted client side with the symmetric key. The symmetric key itself is with the parent objects encryption key.</p>
+
+<p>The <strong>object table</strong> contains an encryption key and salt, encrypted file metadata, such as the path and modification time, as well as the head of the object in the partitions table.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>objectId</td>
+      <td>int</td>
+      <td>Primary Key</td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td> </td>
+      <td>Directory/File</td>
+    </tr>
+    <tr>
+      <td>salt</td>
+      <td>bytes</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>*name</td>
+      <td>bytes</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>*modTime</td>
+      <td>bytes</td>
+      <td>UTC timestamp</td>
+    </tr>
+    <tr>
+      <td>*key</td>
+      <td>bytes</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>head</td>
+      <td>int</td>
+      <td>partitionId</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The <strong>access list table</strong> is a linking table between users and and partition information. The updated field is also used for synchronization.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>userId</td>
+      <td>int</td>
+      <td>Pk/Fk</td>
+    </tr>
+    <tr>
+      <td>objectId</td>
+      <td>int</td>
+      <td>Pk/Fk</td>
+    </tr>
+    <tr>
+      <td>status</td>
+      <td>status</td>
+      <td>either active/deleted</td>
+    </tr>
+    <tr>
+      <td>updated</td>
+      <td>timestamp</td>
+      <td>UTC timestamp</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Postgres is a good choice for a database because its cross platform, free, and open source. Postgres has also grown considerably over the years and is well known for its reliability and scalability. Postgres is also compatible with Amazon Aurora, which aligns with our choice of MinIO which was partially chosen for Amazon S3 compatibility.</p>
+
+<h2 id="synchronization-api">Synchronization API</h2>
+
+<p>The backend utilizes a private REST api called by the client application for managing files and partitions. The synchronization api is defined is with the following endpoints:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Endpoint</th>
+      <th>Methods</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>/object</td>
+      <td>GET</td>
+    </tr>
+    <tr>
+      <td>/partition</td>
+      <td>GET, POST</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="endpoint-usages">Endpoint Usages</h2>
+
+<p><strong><code class="language-plaintext highlighter-rouge">/object</code></strong> - <strong>GET</strong></p>
+
+<p>This is first queried to get a list of partition ids and object information for updating the client.</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+	</span><span class="nl">"objectId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;objectId&gt;"</span><span class="p">,</span><span class="w">
+	</span><span class="nl">"objectName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;base64 encrypted name&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"objectType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"file"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"objectModTime"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;object file modification time&gt;"</span><span class="p">,</span><span class="w">
+	</span><span class="nl">"objectSalt"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;base64 key objectSalt&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"objectKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;base64 encrypted symmetric key&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"partitionKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;base64 encrypted symmetric key&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"nextId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"next partition id&gt;"</span><span class="p">,</span><span class="w">
+	</span><span class="nl">"partitionIds"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p><strong><code class="language-plaintext highlighter-rouge">/partition/&lt;partitionId&gt;</code></strong> - <strong>POST</strong>, Upload a partition</p>
+
+<p><strong><code class="language-plaintext highlighter-rouge">/partition/&lt;partitionId&gt;</code></strong> - <strong>GET</strong>, Download a partition</p>
+
+<p><strong><code class="language-plaintext highlighter-rouge">/partition/&lt;partitionId&gt;/info</code></strong> - <strong>GET</strong></p>
+
+<p>After <code class="language-plaintext highlighter-rouge">/object</code> is queried, the partition information and partition data itself are downloaded asynchronously.</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+	</span><span class="nl">"partitionId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;partitionId&gt;"</span><span class="p">,</span><span class="w">
+	</span><span class="nl">"partitionSalt"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;base 64 salt"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"partitionKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;base64 encrypted symmetric key&gt;"</span><span class="p">,</span><span class="w">
+   </span><span class="nl">"nextId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"next partition id&gt;"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+  </div>
+<a class="u-url" href="/backend" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">safesync.io</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">safesync.io</li>
+<li><a class="u-email" href="mailto:rudy.reyn@gmail.com">rudy.reyn@gmail.com</a></li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/rudy-reyn"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">rudy-reyn</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>An end-to-end encrypted cloud file storage system.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

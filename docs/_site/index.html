@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>safesync.io | An end-to-end encrypted cloud file storage system.</title>
+<meta name="generator" content="Jekyll v4.3.2">
+<meta property="og:title" content="safesync.io">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="An end-to-end encrypted cloud file storage system.">
+<meta property="og:description" content="An end-to-end encrypted cloud file storage system.">
+<link rel="canonical" href="http://localhost:4000/">
+<meta property="og:url" content="http://localhost:4000/">
+<meta property="og:site_name" content="safesync.io">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="safesync.io">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","description":"An end-to-end encrypted cloud file storage system.","headline":"safesync.io","name":"safesync.io","url":"http://localhost:4000/"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css">
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="safesync.io">
+</head>
+<body>
+<header class="site-header" role="banner">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">safesync.io</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/backend">Backend Application and API</a><a class="page-link" href="/client">Client Side Application</a>
+</div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h2 id="introduction">Introduction</h2>
+
+<p>This is an end-to-end encrypted file syncing application
+with the client written in Python and the backend Haskell inspired by cloud hosting services such as Dropbox and Mega. A considerable emphasis has been placed on data integrity, privacy, and security.</p>
+
+<p><a href="https://github.com/rudy-reyn/safesync.io">Source Repository</a></p>
+
+<h3 id="table-of-contents">Table of Contents</h3>
+
+<p><a href="client">Client Side Application</a></p>
+
+<p><a href="backend">Backend Application</a></p>
+
+<p><strong>Libraries and tools used</strong>:</p>
+
+<ul>
+  <li>
+<code class="language-plaintext highlighter-rouge">PostgreSQL</code> as the backend database</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">MinIO</code> as the file object store</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">Scotty</code> - A Haskell library for the backend web framework.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">esqueleto/persistent</code> for backend database management.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">crypto</code> for client side encryption.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">requests</code> for client side HTTPs.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">watchdog</code> for file management.</li>
+</ul>
+
+<h1 id="architecture-overview">Architecture Overview</h1>
+
+<p>The general architecture is composed of a client side application, an backend server, a backend database, and an object store. The notification server is used to ping the client with upload information to help maintain consensus. The synchronization server points to and encryption keys as well as the file object store. The file syncing and storage process is based around protocols such as rsync, Dropbox’s <a href="https://dropbox.tech/infrastructure/streaming-file-synchronization">Streaming Sync</a>,  and mega.io, with encryption done client side using symmetric encrypting.</p>
+
+<p><img class="mermaid" src="https://mermaid.ink/svg/eyJjb2RlIjoiZmxvd2NoYXJ0IFREXG5jbGllbnQoKENsaWVudCkpXG5zeW5jKFN5bmNocm9uaXphdGlvbiBTZXJ2ZXIpXG5zZmpbKE1ldGFkYXRhIERhdGFiYXNlKV1cbnN5bmMgLS0-IHNmalxuc3luYyAtLT4gc3RvcmVbKE9iamVjdCBTdG9yZSldXG4lJS1cbmNsaWVudCA8LS4tPiBzeW5jXG5zdG9yZSAtLi0-IGNsaWVudCIsIm1lcm1haWQiOm51bGx9"></p>
+
+<p>Code for the client side application is written in Python and the backend is written in Haskell. The backend database use PostgreSQL as a database management system and <a href="https://min.io/">MinIO</a> is used as an object store for storing files.</p>
+
+<h1 id="security-overview">Security Overview</h1>
+
+<p>One of the most effective ways to ensure security and privacy in a cloud storage environment is through client side encryption. Client side encryption ensures that without the encryption keys, data can’t be read on the backend. Furthermore, MinIO supports an additional layer of server side encryption. This is similar to cryptographic splitting, as files are first partitioned and then encrypted on both the client and server side. This means that both the client and server need to work in coordination for file decryption.</p>
+
+<p>AES-GCM is used for encryption with randomly generated 128 bit symmetric keys. AES-GCM is used because AES in general is an industry standard in symmetric key cryptography, and Galois Counter Mode (GCM) is good for maintaining data integrity and confidentially. AES-GCM is also relatively portable and wont be severely limited by the users hardware.</p>
+
+<h2 id="initial-authentication">Initial Authentication</h2>
+
+<p>Users are authenticated password-less.</p>
+
+<ul>
+  <li>Password-less authentication can be done using  third party sign-in (such as Google), or another service, TOTP, one time passcodes, a physical security key, email, SMS, biometric, etc. This can also include multi-factor authentication (MFA).</li>
+  <li>This is done because the master key is encrypted with the users password, and this would prevent the ability to derive the master key server side.</li>
+</ul>
+
+<p>Generally, I’d want to require some for of MFA, with recommended use of third party sign-in, security keys, and/or TOTP.</p>
+
+<h2 id="master-key-derivation"><strong>Master Key Derivation</strong></h2>
+
+<p>After authentication, a master key is derived. The master key is used to decrypt stored file encryption metadata and symmetric keys, which is what’s later used for file encryption and decryption.</p>
+
+<p>A password is used for the purpose of key derivation. A 128 bit master key salt is stored server side as well as a SHA256 hash of the master key.</p>
+
+<ol>
+  <li>The master key is derived using the users password and Argon2i.
+    <ul>
+      <li>Argon2 is a memory intensive key derivation function. Salt length, key length, number of threads, iterations, and memory usage can all be increased to increase security.</li>
+    </ul>
+  </li>
+  <li>The master key is hashed and sent server side for key authentication. This needs to match before files are sent to the client.
+    <ul>
+      <li>A brute force attack would need to continuously derive keys for each given salt, as well as a matching SHA256 hash of the derived key, rendering this significantly harder to brute force than using a salted password hash for authentication.</li>
+    </ul>
+  </li>
+  <li>Afterwards, the partition metadata and symmetric keys can be sent to the client and decrypted.</li>
+</ol>
+
+<h2 id="client-side-encryption">Client Side Encryption</h2>
+
+<ol>
+  <li>For regular files, each partition is encrypted with a randomly generated 128 bit symmetric key using AES-GCM.
+    <ul>
+      <li>Metadata and partition information is encrypted with the same key.</li>
+      <li>The partition key is encrypted with the master key.</li>
+      <li>For directories, only the metadata is encrypted.</li>
+    </ul>
+  </li>
+  <li>A post request for each partition is sent to the storage server, first with information about which partitions need to be updated.
+    <ul>
+      <li>Requests can be sent asynchronously as the rest of the file is being encrypted.</li>
+      <li>This also includes information about which partitions need to updated as well as encrypted metadata to allow.</li>
+    </ul>
+  </li>
+</ol>
+
+<p>This means that even if the case of the backend object store is leaked, every partition is encrypted with a separate key. The only way data can be compromised is if the users master key is compromised, the server side keys are compromised, the server file journal containing the keys and partition information is exposed and decrypted, and the backend object store is expose</p>
+
+<h2 id="server-side-encryption">Server Side Encryption</h2>
+
+<p>MinIO, the object store I am using, allows for an additional layer of server side encryption. This is going to be used to offer an additional layer of protection.</p>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">safesync.io</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">safesync.io</li>
+<li><a class="u-email" href="mailto:rudy.reyn@gmail.com">rudy.reyn@gmail.com</a></li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/rudy-reyn"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">rudy-reyn</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>An end-to-end encrypted cloud file storage system.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

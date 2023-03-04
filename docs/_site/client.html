@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Client Side Application | safesync.io</title>
+<meta name="generator" content="Jekyll v4.3.2">
+<meta property="og:title" content="Client Side Application">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="An end-to-end encrypted cloud file storage system.">
+<meta property="og:description" content="An end-to-end encrypted cloud file storage system.">
+<link rel="canonical" href="http://localhost:4000/client">
+<meta property="og:url" content="http://localhost:4000/client">
+<meta property="og:site_name" content="safesync.io">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Client Side Application">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"An end-to-end encrypted cloud file storage system.","headline":"Client Side Application","url":"http://localhost:4000/client"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css">
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="safesync.io">
+</head>
+<body>
+<header class="site-header" role="banner">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">safesync.io</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/backend">Backend Application and API</a><a class="page-link" href="/client">Client Side Application</a>
+</div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Client Side Application</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="" itemprop="datePublished">
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h2 id="overview"><strong>Overview</strong></h2>
+
+<p>The client side application is written in Python and consists of four major components. These components are responsible for monitoring the file system, partitioning files, encrypting partitions, and maintaining consensus between the client application and the file system with the backend.</p>
+
+<p><img class="mermaid" src="https://mermaid.ink/svg/eyJjb2RlIjoiZmxvd2NoYXJ0IExSXG5zdWJncmFwaCBjbGllbnRbIF1cbmRhZW1vbihNb2RpZmljYXRpb24gRGFlbW9uKVxucGFydChQYXJ0aXRpb24gU2VydmljZSlcbnN5bmMoU3luY2hyb25pemF0aW9uIERhZW1vbilcbmVuZFxuJSUtXG5jZmpbKFwiQ2xpZW50IEZpbGUgSm91cm5hbCAoQ0ZKKVwiKV1cbiUlLVxuZGFlbW9uIC0uLT4gcGFydFxucGFydCA8LS0-IHN5bmNcbiUlLVxuY2xpZW50IDwtLT4gY2ZqIiwibWVybWFpZCI6bnVsbH0"></p>
+
+<p><strong>Client application components</strong>:</p>
+
+<ul>
+  <li>
+<strong>Modification Daemon</strong>: The daemon monitors for changes in the file system based on changes in file size and modification times by querying the CFJ as well as checking for new and deleted files. The watchdog Python library is used for querying the file system. Upon detecting a change in the file system, the daemon can invoke the partition service.</li>
+  <li>
+    <p><strong>Partition Service:</strong> Regular files are partitioned in chunks of 8 megabytes, who’s checksums are queried against partition information stored in CFJ. If a partition is changed, the client file journal is updated, the partition is encrypted, and the synchronizer is invoked.</p>
+
+    <p>The partition service is also responsible for decrypting and reconstructing downloaded partitions retrieved by the syncing service.</p>
+  </li>
+  <li>
+<strong>Synchronization Daemon</strong>: The synchronizer is responsible for maintaining consensus between the client and the backend. Modified data, file metadata, and artition information is uploaded and synced with the backed. The synchronizer is also listens for updates from the backend, updates the CFJ, deletes files, downloads partitions, and invokes the partition service accordingly.</li>
+  <li>
+<strong>Client File Journal (CFJ):</strong> The CFJ is a SQLite database consisting of a file metadata table and a partition tables, responsible for storing file metadata, partition information, encryption keys,  and is more thoroughly detailed below.</li>
+</ul>
+
+<h2 id="client-file-journal-cfj">Client File Journal (CFJ)</h2>
+
+<p>The client file journal is a SQLite database consisting of a metadata and partitions table. This is allows for persistent data storage in case of application shutdowns. If corrupted or deleted, the CFJ can be quickly derived from the file system and the server file journal.</p>
+
+<p><strong>Metadata table:</strong></p>
+
+<p>The metadata table can be derived from the file system itself and is stored persistently for synchronization with the server file journal (SFJ).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>file_id</td>
+      <td>string</td>
+      <td>Primary Key</td>
+    </tr>
+    <tr>
+      <td>path</td>
+      <td>string</td>
+      <td>Unique</td>
+    </tr>
+    <tr>
+      <td>file_type</td>
+      <td>bool</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>modification_time</td>
+      <td>timestamp</td>
+      <td>UTC timestamp</td>
+    </tr>
+    <tr>
+      <td>size</td>
+      <td>int</td>
+      <td>Size of file in bytes</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>For the <code class="language-plaintext highlighter-rouge">file_type</code>  field,  <code class="language-plaintext highlighter-rouge">true</code> represents a regular file, <code class="language-plaintext highlighter-rouge">false</code> represents a directory, and <code class="language-plaintext highlighter-rouge">null</code> represents an unsupported or unknown file type (i.e. a socket, symbolic link, or other posix file type). In the future it may be smart to specify other file types, but as of now only regular files and directories are supported. While file modification time can be spoofed, any modifications will be caught when calculating checksums.</p>
+
+<p><strong>Partitions table:</strong></p>
+
+<p>The partitions table needs to be derived from the server metadata table.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>partition_id</td>
+      <td>int</td>
+      <td>Primary Key</td>
+    </tr>
+    <tr>
+      <td>partition_salt</td>
+      <td>bytes</td>
+      <td>Randomly generated 64 bit sequence.</td>
+    </tr>
+    <tr>
+      <td>*next_id</td>
+      <td>int</td>
+      <td>Recursive foreign Key</td>
+    </tr>
+    <tr>
+      <td>*file_id</td>
+      <td>string</td>
+      <td>Foreign Key</td>
+    </tr>
+    <tr>
+      <td>*checksum</td>
+      <td>string</td>
+      <td>SHA-256 hash of partition contents+salt.</td>
+    </tr>
+    <tr>
+      <td>*symmetric_key</td>
+      <td>bytes</td>
+      <td>Randomly generated 128 bit AES-GCM symmetric key.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Fields marked with <code class="language-plaintext highlighter-rouge">*</code>  are encrypted before being stored server side and decrypted client side with the users master key and the partition salt, with the symmetric key only being decrypted in memory when needed. The encryption/decryption processes is explained in further detail in the partition service section.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">next_id</code> field is a recursive foreign key pointing to the next <code class="language-plaintext highlighter-rouge">partition_id</code> for a given file and is used for file reconstruction, with a value of <code class="language-plaintext highlighter-rouge">null</code> indicating the last partition of a file. The <code class="language-plaintext highlighter-rouge">checksum</code> field is a SHA-256 hash of the partition contents.</p>
+
+<h2 id="partition-service">Partition Service</h2>
+
+<p>The partition service can be broken down into two main applications, one for partitioning, analyzing, and encrypting files and another for decrypting and reconstructing files.</p>
+
+<p>See the <a href="https://www.notion.so/Security-Overview-3613c096d42c44f49165de6c4a905f48">Security Overview</a> page for further details about the encryption and decryption process.</p>
+
+<h2 id="file-partitioning-and-encryption">File Partitioning and Encryption</h2>
+
+<p>Regular files are partitioned in chunks of 8 megabytes, who’s checksums are computed with a salted SHA-256 are queried against partition information stored in CFJ. If a partition is changed, the client file journal is updated, the partition is encrypted, and the synchronizer is invoked. For new files/partitions, a randomly generated salt is used to compute the checksum. Each partition encrypted with their own randomly generated 128 bit symmetric keys using AES-GCM before being synced with the server.</p>
+
+<p>For directories, a singular partition of between 5kb to 50kb of random data is generated with file type marked in the file metadata. This does a good job of further masking the number of files and file types.</p>
+
+<p>Partitions are stored inside of a <code class="language-plaintext highlighter-rouge">.safesync</code> hidden directory for staging partitions before being synced.</p>
+
+<p>Partitions are only encrypted and decrypted on the client side to limit exposure outside of the client application.</p>
+
+<h2 id="partition-decryption-and-reconstruction">Partition Decryption and Reconstruction</h2>
+
+<p>Because files are split into multiple partitions, they need to be decrypted and reconstructed sequentially.</p>
+
+<p>For each partition, the symmetric key, checksum, and next partition id is decrypted using the user’s master key. The partition itself is decrypted with the symmetric key. A null partition id indicates the last partition of a file.</p>
+
+<h2 id="uploading">Uploading</h2>
+
+<p>As described earlier, files are split into 8 megabyte chunks. A post request is sent to the synchronization server with the total number of partitions and the size of the last partition. Afterwards, each file is uploaded via HTTPs. Each file needs to be uploaded correctly to prevent data corruption and maintain consensus.</p>
+
+<h2 id="downloading">Downloading</h2>
+
+<p>Downloading partitions is essentially the opposite of how uploading works. Initially, the client will send a request to the notification server asking for updates</p>
+
+<h2 id="challenges">Challenges</h2>
+
+<p>The primary challenges involved with the client side application boil down to data integrity,  consensus, and effectively partitioning data. Other challenges include managing memory cost and bandwidth usage of the client side application. The CAP theorem is an important aspect to consider.</p>
+
+<ol>
+  <li>Data integrity
+    <ol>
+      <li>Packet loss and dropped network connections can cause data loss and corrupt partitions. The expected number of partitions and checksums of the encrypted data should be sent along with each partition for validation.</li>
+    </ol>
+  </li>
+  <li>Consensus
+    <ol>
+      <li>Because files are split into separate partitions, it’s possible that an invalid combination of partitions can occur. This should be mitigated by computing checksums of each encrypted partition and validating file and partition versions in the partition metadata. File and partition versions need to match after a single partition update, with a fallback to the previous valid version.</li>
+      <li>Multithreading and other asynchronous operations should be done in a way that effectively accounts for files updating constantly. Effectively utilizing locks to restrict the client application but not the user is important for this, as well as properly throwing and handling exceptions.</li>
+    </ol>
+  </li>
+  <li>Cost
+    <ol>
+      <li>Continuously reading and hashing files as well as encrypting data can have a significant impact on memory and be somewhat time consuming. Generally, for most computers and backend servers this shouldn’t be an issue. However, some care should still be taken.</li>
+      <li>Working with native libraries (eg. System.Posix) to handle metadata is faster than manually computing sizes or keeping track of updates.</li>
+      <li>Computing hashes lazily and working with files as streams of separate partitions of limited sizes can reduce memory usage. Loading in each and every file as a whole should be avoided.p</li>
+    </ol>
+  </li>
+</ol>
+
+
+  </div>
+<a class="u-url" href="/client" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">safesync.io</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">safesync.io</li>
+<li><a class="u-email" href="mailto:rudy.reyn@gmail.com">rudy.reyn@gmail.com</a></li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/rudy-reyn"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">rudy-reyn</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>An end-to-end encrypted cloud file storage system.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
