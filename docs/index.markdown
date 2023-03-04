@@ -7,7 +7,7 @@ layout: default
 categories: jekyll update
 ---
 
-[Source Repository](https://github.com/rudy-reyn/bfen)
+
 
 This is a compressed binary encoding format for Forsyth–Edwards Notation (FEN), with an
 implementation library written in TypeScript.
@@ -24,6 +24,8 @@ where castling and en passant is obviously not possible.
 
 For further details about FEN notation check out the wikipedia article
 [here.](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
+
+[Source Repository](https://github.com/rudy-reyn/bfen)
 
 The bit packing tools were partially sourced from Low Byte Productions:
 https://www.youtube.com/watch?v=132wDVovzhw
